@@ -398,7 +398,8 @@
                 selection.render = false;
                 
                 if (!lost) { // Only allow interaction if the player hasn't lost
-                    doClick(e.layerX,e.layerY);
+                    doClick(e.offsetX,e.offsetY);
+                    console.log(e)
                 };
             });
             
