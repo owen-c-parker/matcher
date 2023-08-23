@@ -290,6 +290,17 @@
                 
                 ctx.drawImage(img,x * 40,y * 40);
             };
+
+            // Get offset from falling animations
+            function getOffsetFromAnimation(x,y) {
+                let totalOffset = 0;
+                fallingAnimations.forEach(animation=>{
+                    if (animation.x == x && animation.y >= y) {
+                        totalOffset += animation.offset;
+                    }
+                })
+                return totalOffset;
+            }
             
             function redraw() {
 
@@ -302,15 +313,9 @@
                     subArray.forEach((element,x)=>{
                         let color = element;
 
-                        // Get offset from falling animations
-                        let totalOffset = 0;
-                        fallingAnimations.forEach(animation=>{
-                            if (animation.x == x && animation.y >= y) {
-                                totalOffset += animation.offset;
-                            }
-                        })
+                        
 
-                        drawSquare(x,y - totalOffset/40,color);
+                        drawSquare(x,y - getOffsetFromAnimation(x,y)/40,color);
                     });
                 });
 
@@ -329,8 +334,8 @@
                     [Math.floor(
                         cursor.localX / 40)]);
                 checkedCoords.coords.forEach((value)=>{
-                    if (board[value[1]][0] != '#151515') {
-                        ctx.drawImage(highlightImg,value[0] * 40,value[1] * 40);
+                    if (timer > 0) {
+                        ctx.drawImage(highlightImg,value[0] * 40,value[1] * 40 - getOffsetFromAnimation(value[0],value[1]));
                     }
                 });
                 
@@ -380,7 +385,6 @@
                             x:Math.floor(Math.random() * board[0].length),
                             y:Math.floor(Math.random() * board.length)
                         }
-                        console.log(`ax:${a.x},ay:${a.y},bx:${b.x},by:${b.y}`);
 
                         let temp = board[a.y][a.x];
                         board[a.y][a.x] = board[b.y][b.x];
@@ -463,6 +467,33 @@
                 checkedCoords.strings = [];
                 checkCoord(x,y,board[y][x]);
                 checkedCoords.coords.forEach((value)=>{
+                    let colorOfDestroyedBlock = board[value[1]][value[0]];
+                    console.log(`destroyed a ${board[value[1]][value[0]]} tile!`);
+
+                    for (let i = 0; i < 5; i++) {
+                        // Make color particle
+                        let p = document.createElement('div');
+                        
+                        p.style.left = (c.getBoundingClientRect().x + value[0] * 40 + Math.random()*40) + 'px';
+                        p.style.top = (c.getBoundingClientRect().y + value[1] * 40 + Math.random()*40) + 'px';
+
+                        p.vx = (Math.random() * 2 - 1);
+                        p.vy = (Math.random() * 2 - 1);
+
+                        p.opacity = 1;
+                        
+                        p.classList = ['color-particle'];
+                        p.style.backgroundColor = colorOfDestroyedBlock;
+                        if (!colors.includes(colorOfDestroyedBlock)) {
+                            p.style.backgroundColor = '#ff00ff';
+                        }
+                        if (colorOfDestroyedBlock.substr(0,1) == 'x') {
+                            p.style.backgroundColor = colorOfDestroyedBlock.substr(1);
+                        }
+                        document.body.appendChild(p);
+                    }
+
+                    // Actually destroy it
                     board[value[1]][value[0]] = 'none';
                 });
                 
@@ -640,6 +671,21 @@
                     p.style.opacity -= .01;
                     
                     if (parseFloat(p.style.opacity) <= 0) {
+                        p.remove();
+                    };
+                };
+
+                // Go over all the color particles
+                particles = document.getElementsByClassName('color-particle');
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    let p = particles[i];
+
+                    p.style.left = (parseFloat(p.style.left.substr(0,p.style.left.indexOf('px'))) + p.vx) + 'px';
+                    p.style.top  = (parseFloat(p.style.top.substr(0,p.style.top.indexOf('px'))) + p.vy) + 'px';
+                    
+                    p.vy += .1;
+
+                    if (parseFloat(p.style.top) > window.innerHeight) {
                         p.remove();
                     };
                 };
