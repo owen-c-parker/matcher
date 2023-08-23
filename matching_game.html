@@ -61,7 +61,6 @@
             document.getElementsByTagName('canvas')[0].addEventListener('mousemove',(e)=>{
                 cursor.localX = e.clientX - e.target.getBoundingClientRect().left;
                 cursor.localY = e.clientY - e.target.getBoundingClientRect().top;
-                redraw();
             });
             
             
@@ -164,6 +163,7 @@
                 if (amount > 0) {
                     p.innerHTML = '+' + p.innerHTML;
                 };
+                p.innerHTML += ' sec';
                 document.body.appendChild(p);
             };
             
@@ -197,14 +197,19 @@
                         
                         // Also make the game screen fall
                         c.classList = 'fall-off';
-                        
-                        // And make the page unscrollable
-                        document.getElementsByTagName('html')[0].style.overflow = 'hidden';
                     };
                 },120);
             };
             
+
+            // Contains a list of offsets for animating falling columns
+            let fallingAnimations = [];
+            
+
             function bringDownColumn(x,y) {
+
+                let initialY = y;
+                
                 while (y > 0) {
                     board[y][x] = board[y - 1][x];
                     board[y - 1][x] = 'none';
@@ -213,6 +218,16 @@
                 if (y == 0) {
                     board[0][x] = randColor();
                 };
+
+                // Add an animation
+                if (typeof x == 'number' && typeof y == 'number') {
+                    fallingAnimations.push({
+                        offset:40,
+                        velocity:0,
+                        x:x,
+                        y:initialY
+                    });
+                }
             };
             
             function checkForBlack() {
@@ -250,11 +265,6 @@
                 };
 
                 // Color
-                if (powerupChar == '+' || powerupChar == '&') {
-                    ctx.fillStyle = '#ff00ff';
-                } else {
-                    ctx.fillStyle = color;
-                };
                 switch (powerupChar) {
                     case '+':
                     case '&':
@@ -282,12 +292,25 @@
             };
             
             function redraw() {
+
+                // Fill with black
+                ctx.fillStyle = '#000';
+                ctx.fillRect(0,0,c.width,c.height);
                 
                 // Draw colored squares
                 board.forEach((subArray,y)=>{
                     subArray.forEach((element,x)=>{
                         let color = element;
-                        drawSquare(x,y,color);
+
+                        // Get offset from falling animations
+                        let totalOffset = 0;
+                        fallingAnimations.forEach(animation=>{
+                            if (animation.x == x && animation.y >= y) {
+                                totalOffset += animation.offset;
+                            }
+                        })
+
+                        drawSquare(x,y - totalOffset/40,color);
                     });
                 });
 
@@ -306,7 +329,9 @@
                     [Math.floor(
                         cursor.localX / 40)]);
                 checkedCoords.coords.forEach((value)=>{
-                    ctx.drawImage(highlightImg,value[0] * 40,value[1] * 40);
+                    if (board[value[1]][0] != '#151515') {
+                        ctx.drawImage(highlightImg,value[0] * 40,value[1] * 40);
+                    }
                 });
                 
                 // Draw keyboard selection
@@ -370,6 +395,7 @@
                     },10)
                     return f;
                 };
+
                 f()()()()();
             };
             
@@ -397,13 +423,6 @@
                 
                 let pointOverride = false;
                 dontDrop = false;
-
-                /* New colors now added every 30 seconds
-                // Add new color every 50 clicks
-                if (clickCount % 50 == 0 && extraColors.length > 0) {
-                    colors.push(extraColors.shift());
-                };
-                */
                 
                 let x = Math.floor(rawX / 40);
                 let y = Math.floor(rawY / 40);
@@ -573,11 +592,26 @@
                 timer--;
                 time++;
 
-                // Add new color every 30 seconds (actually double the waiting amount each time :))
-                let colorWaitTime = 3000;
+                // Update the falling animations
+                fallingAnimations.forEach(animation=>{
+                    animation.velocity += .1;
+                    animation.offset -= animation.velocity;
+                });
+
+                // Delete animations that have completed
+                for (let i = fallingAnimations.length - 1; i >= 0; i--) {
+                    if (fallingAnimations[i].offset <= 0) {
+                        fallingAnimations.splice(i,1)
+                    }
+                }
+
+                redraw();
+
+                // Add new color ever so often
+                let colorWaitTime = 6000;
                 if (time % colorWaitTime == 0 && extraColors.length > 0) {
                     colors.push(extraColors.shift());
-                    colorWaitTime *= 2;
+                    colorWaitTime *= 3.5;
                 };
                 
                 if (timer <= 0) {
