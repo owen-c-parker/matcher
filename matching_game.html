@@ -110,6 +110,9 @@
                 if (Math.random() < .006 && !init) {
                     c = 'x' + randTrueColor();
                 };
+                if (Math.random() < .006 && !init) {
+                    c = '@';
+                };
                 return c;
             };
             
@@ -130,6 +133,7 @@
             let shuffleTileImg = doImage('tileShuffle.png');
             let clearTileImg = doImage('clearTile.png');
             let highlightImg = doImage('highlight.png');
+            let bombTileImg = doImage('bombTile.png');
             
             
             
@@ -258,7 +262,7 @@
             function drawSquare(x,y,color) {
                 let powerupChar = color.charAt(0);
 
-                if (powerupChar == '+' || powerupChar == '&' || powerupChar == 'x') {
+                if (powerupChar == '+' || powerupChar == '&' || powerupChar == 'x' || powerupChar == '@') {
                     color = color.substr(1);
                 } else {
                     powerupChar = '';
@@ -268,7 +272,9 @@
                 switch (powerupChar) {
                     case '+':
                     case '&':
+                    case '@':
                         ctx.fillStyle = '#ff00ff'
+                    break;
                     default:
                         ctx.fillStyle = color;
                 };
@@ -285,6 +291,9 @@
                     break;
                     case 'x':
                     img = clearTileImg;
+                    break;
+                    case '@':
+                    img = bombTileImg;
                     break;
                 };
                 
@@ -440,13 +449,35 @@
                 if (board[y][x] == '+') {
                     killPlus(x,y);
                     dontDrop = true;
-                    pointOverride = -1;
+                    pointOverride = 5;
                 };
 
                 // Shuffle tile exception
                 if (board[y][x] == '&') {
                     shuffle();
                     
+                    pointOverride = 5;
+                };
+
+                // Bomb tile exception
+                if (board[y][x] == '@') {
+                    let destroyArea = [
+                                [-1,-2],[ 0,-2],[ 1,-2],
+                        [-2,-1],[-1,-1],[ 0,-1],[ 1,-1],[ 2,-1],
+                        [-2, 0],[-1, 0],[ 0, 0],[ 1, 0],[ 2, 0],
+                        [-2, 1],[-1, 1],[ 0, 1],[ 1, 1],[ 2, 1],
+                                [-1, 2],[ 0, 2],[ 1, 2]
+                        ];
+                    
+                    destroyArea.forEach((offset)=>{
+                        if (board[y + offset[1]] == undefined)
+                            return;
+                        if (board[y + offset[1]][x + offset[0]] == undefined)
+                            return;
+
+                        board[y + offset[1]][x + offset[0]] = '#ff00ff';
+                    });
+
                     pointOverride = 5;
                 };
 
