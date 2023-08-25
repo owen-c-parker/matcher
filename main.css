@@ -34,6 +34,15 @@ canvas {
     margin-top:30px;
 }
 
+.unselectable {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
 button {
     font-size:30pt;
     background-image:linear-gradient(to right,#9f78e7,#f50062);
@@ -167,4 +176,25 @@ a {
     -moz-user-select: none;     /* Firefox all */
     -ms-user-select: none;      /* IE 10+ */
     user-select: none;
+}
+
+.credits {
+    text-align: center;
+    display: block;
+    margin: auto;
+}
+
+.top-left-container {
+    position:fixed;
+    left:0px;
+    top:0px;
+}
+
+.ui-button {
+    width:48px;
+    height:48px;
+
+    image-rendering: pixelated;
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
 }

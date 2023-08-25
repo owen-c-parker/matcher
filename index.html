@@ -5,11 +5,31 @@
     </head>
     <body>
         <img src="logo.png" class="logo big-logo">
-        <a href="matching_game.html"><button>PLAY</button></a><br>
+        <a id="play-button" href="matching_game.html"><button>PLAY</button></a><br>
         <div id="highscore" class="highscores">
             No highscores yet!
         </div>
+        <div>
+            Credits:<br>
+            Sound effects - <a style="color:blue" href="https://sfxr.me/">jsfxr</a><br>
+            Everything else - Owen Parker<br>
+        </div>
         <script>
+
+            let konamiCode = ['ArrowUp','ArrowUp','ArrowDown','ArrowDown','ArrowLeft','ArrowRight','ArrowLeft','ArrowRight','b','a']
+            let codeIndex = 0;
+            document.addEventListener('keydown',e=>{
+                if (konamiCode[codeIndex] == e.key) {
+                    codeIndex++;
+                } else {
+                    codeIndex = 0;
+                }
+
+                if (codeIndex == konamiCode.length) {
+                    document.getElementById('play-button').href = 'matching_game.html?hardmode=true';
+                }
+            })
+
             function formatTimer(num,doWarning) {
                 let done = '';
                 

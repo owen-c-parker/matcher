@@ -4,6 +4,9 @@
         <link rel="stylesheet" href="main.css">
     </head>
     <body>
+        <div class="top-left-container unselectable">
+            <img id="mute-button" class="audio-button ui-button" src="./audioEnabled.png">
+        </div>
         <a href="index.html"><img src="logo.png" class="logo"></a>
         <div id="timer"></div>
         <div id="results"></div>
@@ -13,6 +16,17 @@
             let selection = {x:0,y:0,render:false};
             let clickCount = 0;
 
+            let mute = false;
+            let muteButton = document.getElementById('mute-button');
+
+
+            muteButton.addEventListener('click',()=>{
+                mute = !mute;
+
+                muteButton.src = mute ? 'audioDisabled.png' : 'audioEnabled.png';
+            });
+
+
             var checkedCoords = {};
             
             function getCookieData() {
@@ -21,6 +35,14 @@
                 let data = JSON.parse(dataString);
                 return data;
             };
+
+            function playSound(soundToPlay) {
+                if (mute)
+                    return;
+                let clone = soundToPlay.cloneNode();
+                clone.play();
+                clone.remove();
+            }
             
             
             function killPlus(x,y) {
@@ -95,6 +117,15 @@
             let colors = ['red','yellow','green','blue','white'];
             let extraColors = ['cyan','orange','purple','#ff0088','#630','#777'];
             let hardBlockColor = '#151515';
+
+            // Hardmode
+            if (location.search.split('?').includes('hardmode=true')) {
+                extraColors.forEach(c=>{
+                    colors.push(c);
+                });
+                extraColors = [];
+            }
+
             function randColor(init) {
                 let randTrueColor = ()=>{return colors[Math.floor(Math.random() * colors.length)]}
                 let c = randTrueColor();
@@ -127,13 +158,23 @@
             
             
             
-            let tileImg = doImage('tile.png');
-            let selectionImg = doImage('selection.png');
-            let plusTileImg = doImage('plusTile.png');
-            let shuffleTileImg = doImage('tileShuffle.png');
-            let clearTileImg = doImage('clearTile.png');
-            let highlightImg = doImage('highlight.png');
-            let bombTileImg = doImage('bombTile.png');
+            const tileImg = doImage('tile.png');
+            const selectionImg = doImage('selection.png');
+            const plusTileImg = doImage('plusTile.png');
+            const shuffleTileImg = doImage('tileShuffle.png');
+            const clearTileImg = doImage('clearTile.png');
+            const highlightImg = doImage('highlight.png');
+            const bombTileImg = doImage('bombTile.png');
+
+            const sound = {
+                silence:{cloneNode:()=>{return {remove:()=>{},play:()=>{}}}},
+                blockBreak:new Audio('./sfx/blockBreak.wav'),
+                clear:new Audio('./sfx/clear.wav'),
+                explosion:new Audio('./sfx/explosion.wav'),
+                plus:new Audio('./sfx/plus.wav'),
+                shuffle:new Audio('./sfx/shuffle.wav'),
+                mistake:new Audio('./sfx/mistake.wav'),
+            }
             
             
             
@@ -439,28 +480,34 @@
                 
                 let x = Math.floor(rawX / 40);
                 let y = Math.floor(rawY / 40);
+
+                let soundToPlay = sound.blockBreak;
                 
                 // Ignore if it's a hard block
                 if (board[y][x] == hardBlockColor) {
+                    soundToPlay = sound.silence;
                     return;
                 };
                 
                 // Plus tile exception
                 if (board[y][x] == '+') {
+                    soundToPlay = sound.plus;
                     killPlus(x,y);
                     dontDrop = true;
-                    pointOverride = 5;
+                    pointOverride = 2;
                 };
 
                 // Shuffle tile exception
                 if (board[y][x] == '&') {
+                    soundToPlay = sound.shuffle;
                     shuffle();
                     
-                    pointOverride = 5;
+                    pointOverride = 2;
                 };
 
                 // Bomb tile exception
                 if (board[y][x] == '@') {
+                    soundToPlay = sound.explosion;
                     let destroyArea = [
                                 [-1,-2],[ 0,-2],[ 1,-2],
                         [-2,-1],[-1,-1],[ 0,-1],[ 1,-1],[ 2,-1],
@@ -478,20 +525,22 @@
                         board[y + offset[1]][x + offset[0]] = '#ff00ff';
                     });
 
-                    pointOverride = 5;
+                    pointOverride = 2;
                 };
 
                 // Clear tile exception
                 if (board[y][x].charAt(0) == 'x') {
+                    soundToPlay = sound.clear;
                     clearColor(board[y][x].substr(1));
 
-                    pointOverride = 5;
+                    pointOverride = 2;
                 };
                 
                 // Magenta yields no points
                 if (board[y][x] == '#ff00ff') {
                     pointOverride = -1;
                 };
+
                 
                 // Make all adjacent colors none
                 checkedCoords.coords = [];
@@ -554,13 +603,21 @@
                 // Add time according to the amount in the combo or point override
                 if (!pointOverride) {
                     let timeAmount = (comboAmount - 3) / (.0001 * timer + 1);
-                    timeAmount = Math.ceil(timeAmount * 10) / 10;
+                    timeAmount = Math.ceil(timeAmount * 10) / 50;
                     addTime(Math.max(timeAmount,-1));
                 } else {
                     if (pointOverride != -1) {
                         addTime(pointOverride);
                     };
                 };
+                
+                // Warning sound
+                if (soundToPlay == sound.blockBreak && comboAmount < 3) {
+                    soundToPlay = sound.mistake;
+                }
+
+                // Aaaaand play a sound
+                playSound(soundToPlay);
                 
                 redraw();
             };
@@ -673,7 +730,7 @@
                 let colorWaitTime = 6000;
                 if (time % colorWaitTime == 0 && extraColors.length > 0) {
                     colors.push(extraColors.shift());
-                    colorWaitTime *= 3.5;
+                    colorWaitTime *= 4;
                 };
                 
                 if (timer <= 0) {
