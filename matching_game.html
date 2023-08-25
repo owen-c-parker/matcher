@@ -369,7 +369,12 @@
                 return totalOffset;
             }
             
+
+            var drawTime = 0;
             function redraw() {
+
+                // Start timer
+                let start = new Date();
 
                 // Fill with black
                 ctx.fillStyle = '#000';
@@ -410,6 +415,9 @@
                 if (selection.render) {
                     ctx.drawImage(selectionImg,selection.x * 40,selection.y * 40);
                 };
+
+                // End timer
+                drawTime = new Date().getTime() - start.getTime();
             };
             redraw();
             function main() {
@@ -568,7 +576,7 @@
                 checkCoord(x,y,board[y][x]);
                 checkedCoords.coords.forEach((value)=>{
                     let colorOfDestroyedBlock = board[value[1]][value[0]];
-                    console.log(`destroyed a ${board[value[1]][value[0]]} tile!`);
+                    //console.log(`destroyed a ${board[value[1]][value[0]]} tile!`);
 
                     for (let i = 0; i < 5; i++) {
                         // Make color particle
@@ -730,7 +738,6 @@
               /////////////////////////////
              // FALLING ANIMATION LOGIC //
             /////////////////////////////
-            
             setInterval(()=>{
                 // Update the falling animations
                 fallingAnimations.forEach(animation=>{
@@ -785,7 +792,7 @@
                 for (let i = particles.length - 1; i >= 0; i--) {
                     let p = particles[i];
 
-                    p.style.top = (parseInt(p.style.top.substr(0,p.style.top.indexOf('px'))) - 1) + 'px'
+                    p.style.top = (parseInt(p.style.top.substr(0,p.style.top.indexOf('px'))) - 1) + 'px';
                     p.style.opacity -= .01;
                     
                     if (parseFloat(p.style.opacity) <= 0) {
