@@ -43,22 +43,39 @@
                 clone.play();
                 clone.remove();
             }
+
+            var alreadyBeenActivated = [];
+            function magentify(x,y) {
+
+                tileBeenActivated = false;
+
+                alreadyBeenActivated.forEach(p=>{
+                    if (p[0] == x && p[1] == y) {
+                        tileBeenActivated = true;
+                    }
+                });
+
+                if (['+','@','x','&'].includes(board[y][x].substr(0,1)) && !tileBeenActivated) {
+                    doClick(x * 40,y * 40);
+                } else {
+                    board[y][x] = '#ff00ff';
+                }
+            }
             
             
             function killPlus(x,y) {
-                board[y][x] = 'ff00ff';
                 
                 // Horizontal
                     for (let i = 0; i < board[y].length; i++) {
                         if (i != x) {
-                            board[y][i] = '#ff00ff';
+                            magentify(i,y);
                         };
                     };
                     
                     // Vertical
                     for (let i = 0; i < board.length; i++) {
                         if (i != y) {
-                            board[i][x] = '#ff00ff';
+                            magentify(x,i);
                         };
                     };
             };
@@ -488,6 +505,9 @@
                     soundToPlay = sound.silence;
                     return;
                 };
+
+                // Keep track of which tiles have already been activated so tiles like bombs and plusses don't cause infinite loops
+                alreadyBeenActivated.push([x,y]);
                 
                 // Plus tile exception
                 if (board[y][x] == '+') {
@@ -521,8 +541,8 @@
                             return;
                         if (board[y + offset[1]][x + offset[0]] == undefined)
                             return;
-
-                        board[y + offset[1]][x + offset[0]] = '#ff00ff';
+                        if (!(offset[0] == 0 && offset[1] == 0))
+                            magentify(x + offset[0],y + offset[1]);
                     });
 
                     pointOverride = 2;
@@ -618,6 +638,8 @@
 
                 // Aaaaand play a sound
                 playSound(soundToPlay);
+
+                alreadyBeenActivated = [];
                 
                 redraw();
             };
@@ -701,16 +723,15 @@
                 redraw();
                 
             });
-            
-            
-            
-              /////////////////
-             // TIMER LOGIC //
-            /////////////////
-            let interval = setInterval(()=>{ // Update timer
-                timer--;
-                time++;
 
+
+
+
+              /////////////////////////////
+             // FALLING ANIMATION LOGIC //
+            /////////////////////////////
+            
+            setInterval(()=>{
                 // Update the falling animations
                 fallingAnimations.forEach(animation=>{
                     animation.velocity += .1;
@@ -723,6 +744,15 @@
                         fallingAnimations.splice(i,1)
                     }
                 }
+            },10)
+            
+            
+              /////////////////
+             // TIMER LOGIC //
+            /////////////////
+            let interval = setInterval(()=>{ // Update timer
+                timer--;
+                time++;
 
                 redraw();
 
